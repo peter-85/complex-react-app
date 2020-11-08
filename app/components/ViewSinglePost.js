@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext, useMemo } from "react";
 import Page from "./Page";
-import { useParams, Link } from "react-router-dom";
+import NotFound from "./NotFound";
+import { useParams, Link, useHistory } from "react-router-dom";
 import Axios from "axios";
 import LoadingDotsIcon from "./LoadingDotsIcon";
 import ReactMarkDown from "react-markdown";
 import ReactTooltip from "react-tooltip";
+import StateContext from "../StateContext";
+import DispatchContext from "../DispatchContext";
 
 const ViewSinglePost = () => {
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [post, setPost] = useState([]);
+
+  const appState = useContext(StateContext);
+  const appDispatch = useContext(DispatchContext);
+
+  const history = useHistory();
 
   useEffect(() => {
     const request = Axios.CancelToken.source();
@@ -29,7 +37,11 @@ const ViewSinglePost = () => {
     return () => {
       request.cancel();
     };
-  }, []);
+  }, [id]);
+
+  if (!isLoading && !post) {
+    return <NotFound />;
+  }
 
   if (isLoading)
     return (
@@ -44,30 +56,61 @@ const ViewSinglePost = () => {
     date.getMonth() + 1
   }/${date.getDate()}/ ${date.getFullYear()}`;
 
+  const isOwner = () => {
+    if (appState.loggedIn) {
+      return appState.user.username === post.author.username;
+    }
+    return false;
+  };
+
+  const deleteHandler = async () => {
+    const areYouSure = window.confirm(
+      "Do you really want to delete this post?",
+    );
+    if (areYouSure) {
+      try {
+        const response = await Axios.delete(`/post/${id}`, {
+          data: { token: appState.user.token },
+        });
+        if (response.data === "Success") {
+          appDispatch({
+            type: "flashMessage",
+            value: "Post was successfully deleted.",
+          });
+          history.push(`/profile/${appState.user.username}`);
+        }
+      } catch (error) {
+        console.log("There was a problem");
+      }
+    }
+  };
+
   return (
     <Page title={post.title}>
       <div className="d-flex justify-content-between">
         <h2>{post.title}</h2>
-        <span className="pt-2">
-          <Link
-            to={`/post/${id}/edit`}
-            data-tip="Edit"
-            data-for="edit"
-            className="text-primary mr-2"
-          >
-            <i className="fas fa-edit"></i>
-          </Link>
-          <ReactTooltip id="edit" className="custom-tooltip" />{" "}
-          <Link
-            to="#"
-            className="delete-post-button text-danger"
-            data-tip="Delete"
-            data-for="delete"
-          >
-            <i className="fas fa-trash"></i>
-          </Link>
-          <ReactTooltip id="delete" className="custom-tooltip" />
-        </span>
+        {isOwner() && (
+          <span className="pt-2">
+            <Link
+              to={`/post/${id}/edit`}
+              data-tip="Edit"
+              data-for="edit"
+              className="text-primary mr-2"
+            >
+              <i className="fas fa-edit"></i>
+            </Link>
+            <ReactTooltip id="edit" className="custom-tooltip" />{" "}
+            <a
+              onClick={deleteHandler}
+              className="delete-post-button text-danger"
+              data-tip="Delete"
+              data-for="delete"
+            >
+              <i className="fas fa-trash"></i>
+            </a>
+            <ReactTooltip id="delete" className="custom-tooltip" />
+          </span>
+        )}
       </div>
 
       <p className="text-muted small mb-4">

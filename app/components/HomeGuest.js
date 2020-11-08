@@ -80,7 +80,7 @@ const HomeGuest = () => {
               type="submit"
               className="py-3 mt-4 btn btn-lg btn-success btn-block"
             >
-              Sign up htmlFor ComplexApp
+              Sign up for ComplexApp
             </button>
           </form>
         </div>

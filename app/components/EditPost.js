@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useImmerReducer } from "use-immer";
 import Page from "./Page";
-import { useParams, Link } from "react-router-dom";
+import NotFound from "./NotFound";
+import { useParams, Link, useHistory } from "react-router-dom";
 import Axios from "axios";
 import LoadingDotsIcon from "./LoadingDotsIcon";
 import StateContext from "../StateContext";
@@ -10,6 +11,7 @@ import DispatchContext from "../DispatchContext";
 const EditPost = () => {
   const appState = useContext(StateContext);
   const appDispatch = useContext(DispatchContext);
+  let history = useHistory();
 
   const originalState = {
     title: {
@@ -26,7 +28,9 @@ const EditPost = () => {
     isSaving: false,
     id: useParams().id,
     sendCount: 0,
+    notFound: false,
   };
+
   const ourReducer = (draft, action) => {
     switch (action.type) {
       case "fetchComplete":
@@ -75,6 +79,10 @@ const EditPost = () => {
         }
         break;
 
+      case "notFound":
+        draft.notFound = true;
+        break;
+
       default:
         break;
     }
@@ -90,6 +98,19 @@ const EditPost = () => {
         const response = await Axios.get(`/post/${state.id}/`, {
           cancelToken: request.token,
         });
+        if (response.data) {
+          dispatch({ type: "fetchComplete", value: response.data });
+          if (appState.user.username !== response.data.author.username) {
+            appDispatch({
+              type: "flashMessage",
+              value: "You do not have permissions",
+            });
+            history.push("/");
+          }
+        } else {
+          console.log("test");
+          dispatch({ type: "notFound" });
+        }
         dispatch({ type: "fetchComplete", value: response.data });
       } catch (error) {
         console.log("There was a problem");
@@ -146,9 +167,16 @@ const EditPost = () => {
       </Page>
     );
 
+  if (state.notFound) {
+    return <NotFound />;
+  }
+
   return (
     <Page title="Edit Post">
-      <form onSubmit={handleSubmit}>
+      <Link className="small font-weight-bold" to={`/post/${state.id}`}>
+        &laquo; Back to post permalink
+      </Link>
+      <form className="mt-3" onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="post-title" className="text-muted mb-1">
             <small>Title</small>
