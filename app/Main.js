@@ -21,6 +21,7 @@ const ViewSinglePost = React.lazy(() => import("./components/ViewSinglePost"));
 import FlashMessages from "./components/FlashMessages";
 import Profile from "./components/Profile";
 import EditPost from "./components/EditPost";
+import Chat from "./components/Chat";
 const Search = React.lazy(() => import("./components/Search"));
 import NotFound from "./components/NotFound";
 import LoadingDotsIcon from "./components/LoadingDotsIcon";
@@ -35,6 +36,8 @@ const Main = () => {
       avatar: localStorage.getItem("complexAppAvatar"),
     },
     isSearchOpen: false,
+    isChatOpen: false,
+    unreadChatCount: 0,
   };
 
   const ourReducer = (draft, action) => {
@@ -58,6 +61,22 @@ const Main = () => {
 
       case "closeSearch":
         draft.isSearchOpen = false;
+        break;
+
+      case "toggleChat":
+        draft.isChatOpen = !draft.isChatOpen;
+        break;
+
+      case "closeChat":
+        draft.isChatOpen = false;
+        break;
+
+      case "incrementUnreadChatCount":
+        draft.unreadChatCount++;
+        break;
+
+      case "clearUnreadChatCount":
+        draft.unreadChatCount = 0;
         break;
 
       default:
@@ -125,6 +144,7 @@ const Main = () => {
               </Suspense>
             </div>
           </CSSTransition>
+          <Chat />
           <Footer />
         </BrowserRouter>
       </DispatchContext.Provider>
