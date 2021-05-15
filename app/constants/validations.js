@@ -17,4 +17,5 @@ export const validationMessages = {
   notUniqueUsername: "That username is already taken",
   validEmail: "You must provide a valid email address.",
   notUniqueEmail: "That email is already being used.",
+  test: "That is test message.",
 };
